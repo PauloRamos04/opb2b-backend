@@ -13,19 +13,20 @@ async function bootstrap() {
   console.log('GOOGLE_PRIVATE_KEY existe:', !!process.env.GOOGLE_PRIVATE_KEY);
   console.log('PORT:', process.env.PORT);
   
-  const app = await NestFactory.create(AppModule);
-  
-  app.enableCors({
-    origin: [
-      'http://localhost:3000',
-      'https://opb2b-frontend.vercel.app'
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+  const app = await NestFactory.create(AppModule, {
+    cors: {
+      origin: [
+        'http://localhost:3000',
+        'https://opb2b-frontend.vercel.app'
+      ],
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      credentials: true,
+    }
   });
 
   const port = process.env.PORT || 8080;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend running on port ${port}`);
   console.log('✅ CORS enabled for production and development');
 }

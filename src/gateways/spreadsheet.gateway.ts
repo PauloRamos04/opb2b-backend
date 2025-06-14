@@ -2,58 +2,51 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { GoogleSheetsService } from '../services/google-sheets.service';
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://opb2b-frontend.vercel.app'
+    ],
     methods: ['GET', 'POST'],
+    credentials: true,
   },
 })
-export class SpreadsheetGateway {
+export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly googleSheetsService: GoogleSheetsService) {}
+  handleConnection(client: Socket) {
+    console.log(`Cliente conectado: ${client.id}`);
+    client.emit('connection-status', { connected: true });
+  }
 
-  @SubscribeMessage('join-room')
-  handleJoinRoom(@ConnectedSocket() client: Socket) {
-    client.join('spreadsheet-room');
-    console.log(`Client ${client.id} joined spreadsheet room`);
+  handleDisconnect(client: Socket) {
+    console.log(`Cliente desconectado: ${client.id}`);
   }
 
   @SubscribeMessage('update-cell')
-  async handleUpdateCell(
-    @MessageBody() data: { row: number; col: number; value: string },
-    @ConnectedSocket() client: Socket,
-  ) {
-    try {
-      await this.googleSheetsService.updateCell(data.row, data.col, data.value);
-      
-      client.to('spreadsheet-room').emit('cell-updated', {
-        row: data.row,
-        col: data.col,
-        value: data.value,
-        updatedBy: client.id,
-      });
-
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+  handleUpdateCell(client: Socket, payload: any) {
+    console.log('Atualizando célula via socket:', payload);
+    client.broadcast.emit('cell-updated', payload);
   }
 
-  @SubscribeMessage('request-data')
-  async handleRequestData(@ConnectedSocket() client: Socket) {
-    try {
-      const data = await this.googleSheetsService.getData();
-      client.emit('data-update', { values: data });
-    } catch (error) {
-      client.emit('error', { message: error.message });
-    }
+  @SubscribeMessage('novo-chamado')
+  handleNovoChamado(client: Socket, payload: any) {
+    console.log('Novo chamado via socket:', payload);
+    client.broadcast.emit('novo-chamado', payload);
+  }
+
+  broadcastDataUpdate(data: any) {
+    this.server.emit('data-update', data);
+  }
+
+  broadcastError(error: any) {
+    this.server.emit('error', error);
   }
 }
