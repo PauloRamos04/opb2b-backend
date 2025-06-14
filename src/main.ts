@@ -2,11 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as dotenv from 'dotenv';
 
-// Carregar .env
 dotenv.config();
 
 async function bootstrap() {
-  // Debug das variáveis de ambiente
   console.log('🔍 Debug das variáveis de ambiente:');
   console.log('NODE_ENV:', process.env.NODE_ENV);
   console.log('GOOGLE_SPREADSHEET_ID:', process.env.GOOGLE_SPREADSHEET_ID);
@@ -18,15 +16,18 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: [
+      'http://localhost:3000',
+      'https://opb2b-frontend.vercel.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 8080;
   await app.listen(port);
-  console.log(`🚀 Backend running on http://localhost:${port}`);
-  console.log('✅ CORS enabled for http://localhost:3000');
+  console.log(`🚀 Backend running on port ${port}`);
+  console.log('✅ CORS enabled for production and development');
 }
 
 bootstrap();
