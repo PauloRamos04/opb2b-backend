@@ -63,7 +63,7 @@ export class GoogleSheetsService {
     try {
       console.log(`📝 Atualizando célula [${row}, ${col}] com valor: "${value}"`);
       
-      // Converter coluna numérica para letra (A, B, C, etc.)
+    
       const columnLetter = this.columnToLetter(col);
       const range = `${this.sheetName}!${columnLetter}${row}`;
       
