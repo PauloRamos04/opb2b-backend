@@ -4,7 +4,10 @@
   "sourceRoot": "src",
   "compilerOptions": {
     "deleteOutDir": true,
-    "assets": ["**/*.json"],
-    "watchAssets": true
+    "webpack": false,
+    "tsConfigPath": "tsconfig.build.json",
+    "watchAssets": false,
+    "assets": [],
+    "manualRestart": false
   }
 }
