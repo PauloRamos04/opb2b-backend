@@ -5,6 +5,10 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "build": "node --max-old-space-size=4096 node_modules/.bin/nest build",
     "start": "node --max-old-space-size=2048 dist/main",
