@@ -6,6 +6,7 @@ export class GoogleSheetsService {
   private sheets;
   private spreadsheetId: string;
   private sheetName: string;
+  private isConfigured: boolean = false;
 
   constructor() {
     console.log('🔧 Inicializando GoogleSheetsService...');
@@ -20,7 +21,9 @@ export class GoogleSheetsService {
     console.log(`- Private Key: ${process.env.GOOGLE_PRIVATE_KEY ? '✅' : '❌'}`);
 
     if (!this.spreadsheetId || !process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || !process.env.GOOGLE_PRIVATE_KEY) {
-      throw new Error('❌ Credenciais do Google não encontradas nas variáveis de ambiente');
+      console.log('⚠️ GoogleSheetsService não está totalmente configurado. Funcionalidades do Google Sheets estarão desabilitadas.');
+      this.isConfigured = false;
+      return;
     }
 
     try {
@@ -33,20 +36,29 @@ export class GoogleSheetsService {
       });
 
       this.sheets = google.sheets({ version: 'v4', auth });
+      this.isConfigured = true;
       console.log('✅ GoogleSheetsService inicializado com sucesso');
     } catch (error) {
       console.error('❌ Erro ao inicializar GoogleSheetsService:', error);
-      throw error;
+      this.isConfigured = false;
+    }
+  }
+
+  private checkConfiguration() {
+    if (!this.isConfigured) {
+      throw new Error('GoogleSheetsService não está configurado. Verifique as variáveis de ambiente.');
     }
   }
 
   async getData(): Promise<string[][]> {
+    this.checkConfiguration();
+    
     try {
       console.log(`📖 Lendo dados da planilha: ${this.sheetName}`);
       
       const response = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.spreadsheetId,
-        range: `${this.sheetName}!A:AZ`, // Ler até a coluna AZ
+        range: `${this.sheetName}!A:AZ`,
       });
 
       const rows = response.data.values || [];
@@ -60,10 +72,11 @@ export class GoogleSheetsService {
   }
 
   async updateCell(row: number, col: number, value: string): Promise<any> {
+    this.checkConfiguration();
+    
     try {
       console.log(`📝 Atualizando célula [${row}, ${col}] com valor: "${value}"`);
       
-    
       const columnLetter = this.columnToLetter(col);
       const range = `${this.sheetName}!${columnLetter}${row}`;
       
@@ -101,6 +114,8 @@ export class GoogleSheetsService {
   }
 
   async addRow(data: string[]): Promise<any> {
+    this.checkConfiguration();
+    
     try {
       console.log('➕ Adicionando nova linha:', data);
       
@@ -122,6 +137,8 @@ export class GoogleSheetsService {
   }
 
   async getSheetInfo(): Promise<any> {
+    this.checkConfiguration();
+    
     try {
       const response = await this.sheets.spreadsheets.get({
         spreadsheetId: this.spreadsheetId
@@ -140,5 +157,9 @@ export class GoogleSheetsService {
       console.error('❌ Erro ao obter info da planilha:', error);
       throw new Error(`Erro ao obter informações da planilha: ${error.message}`);
     }
+  }
+
+  getConfigurationStatus(): boolean {
+    return this.isConfigured;
   }
 }
