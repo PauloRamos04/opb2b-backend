@@ -1,13 +1,30 @@
-import { Controller, Get, Post, Body, HttpException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, HttpException, HttpStatus, Request } from '@nestjs/common';
 import { GoogleSheetsService } from './services/google-sheets.service';
+import { AuthService } from './services/auth.service';
+import { LoginDto } from './dto/auth-dto';
 
 @Controller()
 export class SpreadsheetController {
-  constructor(private readonly googleSheetsService: GoogleSheetsService) {}
+  constructor(
+    private readonly googleSheetsService: GoogleSheetsService,
+    private readonly authService: AuthService
+  ) {}
 
   @Get()
   getHello(): string {
     return 'OPB2B Backend is running!';
+  }
+
+  @Post('auth/login')
+  async login(@Body() loginDto: LoginDto, @Request() req: any) {
+    try {
+      const ip = req.ip || req.connection?.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+      
+      return await this.authService.login(loginDto, ip, userAgent);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Get('health')
@@ -20,6 +37,7 @@ export class SpreadsheetController {
     };
   }
 
+  // PÚBLICO: Sem autenticação necessária
   @Get('spreadsheet/data')
   async getData() {
     try {
@@ -123,5 +141,8 @@ export class SpreadsheetController {
         timestamp: new Date().toISOString()
       };
     }
+    
   }
+
+  
 }
