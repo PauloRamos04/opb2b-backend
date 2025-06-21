@@ -17,6 +17,7 @@
     "build:production": "npm run clean && npm run build",
     "clean": "rimraf dist node_modules/.cache",
     "start": "node --max-old-space-size=2048 dist/main",
+    "seed": "node scripts/seed-database.ts",
     "start:nest": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",

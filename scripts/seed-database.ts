@@ -1,38 +1,50 @@
-import { MongoDBConnection } from '../src/lib/mongodb';
-import { UserRepository } from '../src/repositories/user.repository';
+import 'dotenv/config';
+import { MongoClient } from 'mongodb';
+import * as bcrypt from 'bcryptjs';
 
 async function seedDatabase() {
   console.log('🌱 Iniciando seed do banco de dados...');
   console.log('👥 Criando APENAS usuários (chamados vêm do Google Sheets)');
   console.log('🌍 TODOS os usuários terão acesso a TODAS as carteiras');
 
+  const uri = process.env.MONGODB_URI;
+  const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
+
+  if (!uri) {
+    console.error('❌ MONGODB_URI não encontrada no .env');
+    process.exit(1);
+  }
+
+  const client = new MongoClient(uri);
+
   try {
     // Conectar ao MongoDB
-    await MongoDBConnection.connect();
+    console.log('🔗 Conectando ao MongoDB...');
+    await client.connect();
     console.log('✅ MongoDB conectado para seed');
-    
+
+    const db = client.db(dbName);
+    const usersCollection = db.collection('users');
+
     // Testar conexão
-    const db = MongoDBConnection.getDatabase();
     await db.admin().ping();
     console.log('✅ Teste de ping no MongoDB OK');
-    
-    const userRepository = new UserRepository();
-    
+
     // Lista completa de todas as carteiras
     const todasCarteiras = [
-      'ALEGRA', 'CABOTELECOM', 'CORTEZ', 'CONEXÃO', 'DIRETA', 'IP3', 
-      'MEGA', 'MULTIPLAY', 'NETVGA', 'NOWTECH', 'OUTCENTER', 
-      'RESENDENET', 'SAPUCAINET', 'STARWEB', 'TECNET', 'WAYNET', 
+      'ALEGRA', 'CABOTELECOM', 'CORTEZ', 'CONEXÃO', 'DIRETA', 'IP3',
+      'MEGA', 'MULTIPLAY', 'NETVGA', 'NOWTECH', 'OUTCENTER',
+      'RESENDENET', 'SAPUCAINET', 'STARWEB', 'TECNET', 'WAYNET',
       'WEBNET', 'WEBBY', 'AZZA', 'LIVRE'
     ];
-    
+
     const users = [
       {
         nome: 'Dione',
         email: 'dione@b2b.com',
         password: '123456',
         operador: 'B2B | Dione',
-        role: 'admin' as const,
+        role: 'admin',
         carteiras: todasCarteiras,
       },
       {
@@ -40,7 +52,7 @@ async function seedDatabase() {
         email: 'gustavo@b2b.com',
         password: '123456',
         operador: 'B2B | Gustavo',
-        role: 'operador' as const,
+        role: 'admin',
         carteiras: todasCarteiras,
       },
       {
@@ -48,7 +60,7 @@ async function seedDatabase() {
         email: 'jessica@b2b.com',
         password: '123456',
         operador: 'B2B | Jessica',
-        role: 'operador' as const,
+        role: 'admin',
         carteiras: todasCarteiras,
       },
       {
@@ -56,7 +68,7 @@ async function seedDatabase() {
         email: 'leonardo@b2b.com',
         password: '123456',
         operador: 'B2B | Leonardo',
-        role: 'operador' as const,
+        role: 'admin',
         carteiras: todasCarteiras,
       },
       {
@@ -64,18 +76,25 @@ async function seedDatabase() {
         email: 'matheus@b2b.com',
         password: '123456',
         operador: 'B2B | Matheus',
-        role: 'operador' as const,
+        role: 'admin',
         carteiras: todasCarteiras,
       },
       {
-        nome: 'Paulo',
+        nome: 'Paulo F',
         email: 'paulo@b2b.com',
         password: '123456',
-        operador: 'B2B | Matheus',
-        role: 'operador' as const,
+        operador: 'B2B | Paulo F',
+        role: 'admin',
         carteiras: todasCarteiras,
       },
-      
+      {
+        nome: 'Nickolas',
+        email: 'nickolas@b2b.com',
+        password: '123456',
+        operador: 'B2B | Nickolas',
+        role: 'admin',
+        carteiras: todasCarteiras,
+      },
     ];
 
     console.log(`📝 Tentando criar ${users.length} usuários...`);
@@ -88,20 +107,34 @@ async function seedDatabase() {
     for (const userData of users) {
       try {
         console.log(`\n🔄 Processando usuário: ${userData.nome}`);
-        
+
         // Verificar se já existe
-        const existingUser = await userRepository.findByEmail(userData.email);
+        const existingUser = await usersCollection.findOne({ 
+          email: userData.email, 
+          ativo: true 
+        });
+        
         if (existingUser) {
           console.log(`⚠️  ${userData.nome} já existe`);
           existentes++;
           continue;
         }
 
-        // Criar usuário
-        const novoUsuario = await userRepository.createUser(userData);
-        console.log(`✅ ${userData.nome} (${userData.role}) criado com ID: ${novoUsuario._id}`);
-        criados++;
+        // Hash da senha
+        const hashedPassword = await bcrypt.hash(userData.password, 12);
         
+        // Criar usuário
+        const novoUsuario = {
+          ...userData,
+          password: hashedPassword,
+          dataCriacao: new Date(),
+          ativo: true,
+        };
+
+        const result = await usersCollection.insertOne(novoUsuario);
+        console.log(`✅ ${userData.nome} (${userData.role}) criado com ID: ${result.insertedId}`);
+        criados++;
+
       } catch (error) {
         console.error(`❌ Erro ao criar ${userData.nome}:`, error.message);
         console.error('Stack:', error.stack);
@@ -114,31 +147,26 @@ async function seedDatabase() {
     console.log(`   ✅ Criados: ${criados}`);
     console.log(`   ⚠️  Já existiam: ${existentes}`);
     console.log(`   ❌ Erros: ${erros}`);
-    
+
     if (criados > 0) {
       console.log('\n👑 Usuários criados para login:');
       console.log('   🔑 Admin: dione@b2b.com / 123456');
-      console.log('   👤 Operador: gustavo@b2b.com / 123456');
-      console.log('   👤 Operador: jessica@b2b.com / 123456');
-      console.log('   👤 Operador: paulo@b2b.com / 123456');
+      console.log('   🔑 Admin: gustavo@b2b.com / 123456');
+      console.log('   🔑 Admin: jessica@b2b.com / 123456');
+      console.log('   🔑 Admin: leonardo@b2b.com / 123456');
+      console.log('   🔑 Admin: matheus@b2b.com / 123456');
+      console.log('   🔑 Admin: paulo@b2b.com / 123456');
+      console.log('   🔑 Admin: nickolas@b2b.com / 123456');
     }
-    
+
   } catch (error) {
     console.error('❌ Erro no seed:', error);
     console.error('Stack completo:', error.stack);
   } finally {
-    await MongoDBConnection.disconnect();
+    await client.close();
+    console.log('🔌 MongoDB desconectado');
     process.exit(0);
   }
-}
-
-// Carregar variáveis de ambiente
-require('dotenv').config();
-
-// Verificar se tem as variáveis necessárias
-if (!process.env.MONGODB_URI) {
-  console.error('❌ MONGODB_URI não encontrada no .env');
-  process.exit(1);
 }
 
 seedDatabase();
