@@ -5,13 +5,13 @@ export class MongoDBConnection {
   private static db: Db;
 
   static async connect(): Promise<void> {
-    const uri = process.env.MONGODB_URL || process.env.MONGO_URL;
+    const uri = process.env.MONGO_URL || process.env.MONGO_URL;
     const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
 
     console.log('🔗 Conectando ao MongoDB...');
 
     if (!uri) {
-      throw new Error('MONGODB_URL ou MONGO_URL não está definida nas variáveis de ambiente');
+      throw new Error('MONGO_URL ou MONGO_URL não está definida nas variáveis de ambiente');
     }
 
     try {

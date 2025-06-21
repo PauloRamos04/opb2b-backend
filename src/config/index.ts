@@ -6,7 +6,7 @@ export const config = {
     refreshExpiresIn: '7d',
   },
   mongodb: {
-    uri: process.env.MONGODB_URL || 'mongodb://localhost:27017/operacoes_b2b',
+    uri: process.env.MONGO_URL || 'mongodb://localhost:27017/operacoes_b2b',
     database: process.env.MONGODB_DB || 'operacoes_b2b',
   },
   googleSheets: {

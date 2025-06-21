@@ -2,13 +2,13 @@ require('dotenv').config();
 const { MongoClient } = require('mongodb');
 
 async function testConnection() {
-  const uri = process.env.MONGODB_URL;
+  const uri = process.env.MONGO_URL;
   
   console.log('🔗 Testando conexão MongoDB...');
   console.log('URI:', uri ? uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') : 'NÃO DEFINIDA');
   
   if (!uri) {
-    console.error('❌ MONGODB_URL não encontrada no .env');
+    console.error('❌ MONGO_URL não encontrada no .env');
     return;
   }
 
