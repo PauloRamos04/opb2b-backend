@@ -24,6 +24,10 @@ export class MongoDBConnection {
       connectTimeoutMS: 30000,
       maxIdleTimeMS: 30000,
       retryWrites: true,
+      tls: true,
+      tlsAllowInvalidCertificates: true,
+      tlsAllowInvalidHostnames: true,
+      tlsInsecure: true
     };
 
     try {
@@ -46,7 +50,9 @@ export class MongoDBConnection {
             socketTimeoutMS: 60000,
             connectTimeoutMS: 60000,
             retryWrites: true,
-            maxPoolSize: 5
+            maxPoolSize: 5,
+            tls: false,
+            directConnection: false
           };
           
           this.client = new MongoClient(uri, fallbackOptions);
