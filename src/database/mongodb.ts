@@ -26,8 +26,7 @@ export class MongoDBConnection {
       retryWrites: true,
       tls: true,
       tlsAllowInvalidCertificates: true,
-      tlsAllowInvalidHostnames: true,
-      tlsInsecure: true
+      tlsAllowInvalidHostnames: true
     };
 
     try {
