@@ -1,7 +1,7 @@
 declare namespace NodeJS {
   interface ProcessEnv {
     // Database
-    MONGODB_URI: string;
+    MONGODB_URL: string;
     MONGODB_DB: string;
     
     // JWT Secrets

@@ -49,7 +49,7 @@ async function bootstrap() {
   console.log(`🚀 Application is running on port ${port}`);
   console.log(`📡 API available at: http://localhost:${port}/api`);
   console.log(`📡 CORS enabled for: http://localhost:3000`);
-  console.log(`🍃 MongoDB: ${process.env.MONGODB_URI ? 'Conectado' : 'Não configurado'}`);
+  console.log(`🍃 MongoDB: ${process.env.MONGODB_URL ? 'Conectado' : 'Não configurado'}`);
 
   // Graceful shutdown
   process.on('SIGINT', async () => {

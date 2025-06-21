@@ -7,11 +7,11 @@ async function seedDatabase() {
   console.log('👥 Criando APENAS usuários (chamados vêm do Google Sheets)');
   console.log('🌍 TODOS os usuários terão acesso a TODAS as carteiras');
 
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URL;
   const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
 
   if (!uri) {
-    console.error('❌ MONGODB_URI não encontrada no .env');
+    console.error('❌ MONGODB_URL não encontrada no .env');
     process.exit(1);
   }
 
