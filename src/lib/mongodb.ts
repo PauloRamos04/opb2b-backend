@@ -9,7 +9,6 @@ export class MongoDBConnection {
     const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
 
     console.log('🔗 Tentando conectar ao MongoDB...');
-    console.log('🔍 URI:', uri ? uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') : 'NÃO DEFINIDA');
     console.log('🔍 Database:', dbName);
 
     if (!uri) {
@@ -18,16 +17,12 @@ export class MongoDBConnection {
 
     try {
       console.log('⏳ Conectando...');
-      this.client = new MongoClient(uri, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 45000,
-      });
+      
+      this.client = new MongoClient(uri);
       
       await this.client.connect();
       this.db = this.client.db(dbName);
       
-      // Teste de ping
       await this.db.admin().ping();
       console.log('🍃 MongoDB conectado com sucesso!');
       
@@ -60,14 +55,6 @@ export class MongoDBConnection {
       
       await db.collection('users').createIndex({ email: 1 }, { unique: true });
       await db.collection('users').createIndex({ operador: 1 });
-      await db.collection('chamados').createIndex({ linha: 1 }, { unique: true });
-      await db.collection('chamados').createIndex({ operador: 1 });
-      await db.collection('chamados').createIndex({ status: 1 });
-      await db.collection('chamados').createIndex({ dataAbertura: -1 });
-      await db.collection('user_sessions').createIndex({ token: 1 });
-      await db.collection('user_sessions').createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
-      await db.collection('user_activities').createIndex({ userId: 1, timestamp: -1 });
-      await db.collection('chamados_historico').createIndex({ linha: 1, timestamp: -1 });
       
       console.log('✅ Índices criados com sucesso');
     } catch (error) {
