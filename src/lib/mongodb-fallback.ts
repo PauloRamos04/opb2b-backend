@@ -32,11 +32,14 @@ class InMemoryDB {
         const index = data.findIndex(item => {
           if (query._id) return item._id?.toString() === query._id.toString();
           if (query.email) return item.email === query.email;
+          if (query.token) return item.token === query.token;
           return false;
         });
         
         if (index >= 0) {
-          data[index] = { ...data[index], ...update.$set };
+          if (update.$set) {
+            data[index] = { ...data[index], ...update.$set };
+          }
         }
         return { modifiedCount: index >= 0 ? 1 : 0 };
       },

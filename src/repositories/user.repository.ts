@@ -180,4 +180,23 @@ export class UserRepository {
       throw error;
     }
   }
+
+  async updateSessionToken(sessionId: ObjectId, newToken: string, newExpiresAt: Date): Promise<void> {
+    try {
+      const collection = this.getSessionsCollection();
+      await collection.updateOne(
+        { _id: sessionId },
+        { 
+          $set: { 
+            token: newToken,
+            expiresAt: newExpiresAt,
+            dataUltimaAtualizacao: new Date()
+          } 
+        }
+      );
+    } catch (error) {
+      console.error('❌ Erro ao atualizar token da sessão:', error.message);
+      throw error;
+    }
+  }
 }
