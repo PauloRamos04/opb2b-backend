@@ -159,9 +159,7 @@ async function bootstrap() {
     console.log('✅ MongoDB conectado com sucesso!');
     
     // Executar seed após conexão bem-sucedida
-    if (process.env.NODE_ENV !== 'production' || process.env.RUN_SEED === 'true') {
-      await runSeed();
-    }
+    await runSeed();
     
   } catch (error) {
     console.error('❌ Erro ao conectar MongoDB:', error);
