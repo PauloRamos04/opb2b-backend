@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ObjectId, Collection } from 'mongodb';
-import { MongoDBConnection } from '../lib/mongodb-fallback';
+import { MongoDBConnection } from '../database/mongodb';
 import { IUser, IUserSession, IUserActivity, CreateUserDto } from '../models/user.model';
 import * as bcrypt from 'bcryptjs';
 
