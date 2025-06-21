@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { google } from 'googleapis';
 
 @Injectable()
 export class GoogleSheetsService {
-  private sheets;
+  private sheets: any;
   private spreadsheetId: string;
   private sheetName: string;
   private isConfigured: boolean = false;
+  private googleInstance: any = null;
 
   constructor() {
     console.log('🔧 Inicializando GoogleSheetsService...');
@@ -26,7 +26,21 @@ export class GoogleSheetsService {
       return;
     }
 
+    this.isConfigured = true;
+    console.log('✅ GoogleSheetsService configurado - googleapis será carregado sob demanda');
+  }
+
+  private async initializeGoogleAPI() {
+    if (this.googleInstance) {
+      return this.googleInstance;
+    }
+
     try {
+      console.log('📦 Carregando googleapis sob demanda...');
+      
+      // Importação dinâmica para evitar carregar na inicialização
+      const { google } = await import('googleapis');
+      
       const auth = new google.auth.GoogleAuth({
         credentials: {
           client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -36,11 +50,13 @@ export class GoogleSheetsService {
       });
 
       this.sheets = google.sheets({ version: 'v4', auth });
-      this.isConfigured = true;
-      console.log('✅ GoogleSheetsService inicializado com sucesso');
+      this.googleInstance = google;
+      
+      console.log('✅ googleapis carregado com sucesso');
+      return this.googleInstance;
     } catch (error) {
-      console.error('❌ Erro ao inicializar GoogleSheetsService:', error);
-      this.isConfigured = false;
+      console.error('❌ Erro ao carregar googleapis:', error);
+      throw error;
     }
   }
 
@@ -54,6 +70,8 @@ export class GoogleSheetsService {
     this.checkConfiguration();
     
     try {
+      await this.initializeGoogleAPI();
+      
       console.log(`📖 Lendo dados da planilha: ${this.sheetName}`);
       
       const response = await this.sheets.spreadsheets.values.get({
@@ -75,6 +93,8 @@ export class GoogleSheetsService {
     this.checkConfiguration();
     
     try {
+      await this.initializeGoogleAPI();
+      
       console.log(`📝 Atualizando célula [${row}, ${col}] com valor: "${value}"`);
       
       const columnLetter = this.columnToLetter(col);
@@ -117,6 +137,8 @@ export class GoogleSheetsService {
     this.checkConfiguration();
     
     try {
+      await this.initializeGoogleAPI();
+      
       console.log('➕ Adicionando nova linha:', data);
       
       const response = await this.sheets.spreadsheets.values.append({
@@ -140,6 +162,8 @@ export class GoogleSheetsService {
     this.checkConfiguration();
     
     try {
+      await this.initializeGoogleAPI();
+      
       const response = await this.sheets.spreadsheets.get({
         spreadsheetId: this.spreadsheetId
       });
