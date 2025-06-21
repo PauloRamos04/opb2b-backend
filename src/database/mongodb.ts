@@ -5,32 +5,17 @@ export class MongoDBConnection {
   private static db: Db;
 
   static async connect(): Promise<void> {
-    const uri = process.env.MONGODB_URI;
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URL;
     const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
-    const isProduction = process.env.NODE_ENV === 'production';
 
     console.log('🔗 Conectando ao MongoDB...');
-    console.log('🔍 Database:', dbName);
-    console.log('🌍 Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
 
     if (!uri) {
-      throw new Error('MONGODB_URI não está definida nas variáveis de ambiente');
+      throw new Error('MONGODB_URI ou MONGO_URL não está definida nas variáveis de ambiente');
     }
 
-    const clientOptions = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      maxIdleTimeMS: 30000,
-      retryWrites: true,
-      tls: true,
-      tlsAllowInvalidCertificates: true,
-      tlsAllowInvalidHostnames: true
-    };
-
     try {
-      this.client = new MongoClient(uri, clientOptions);
+      this.client = new MongoClient(uri);
       await this.client.connect();
       this.db = this.client.db(dbName);
       
@@ -40,32 +25,6 @@ export class MongoDBConnection {
       await this.createIndexes();
     } catch (error) {
       console.error('❌ Erro ao conectar MongoDB:', error.message);
-      
-      if (isProduction) {
-        console.log('🔄 Tentando com configurações de fallback...');
-        try {
-          const fallbackOptions = {
-            serverSelectionTimeoutMS: 60000,
-            socketTimeoutMS: 60000,
-            connectTimeoutMS: 60000,
-            retryWrites: true,
-            maxPoolSize: 5,
-            tls: false,
-            directConnection: false
-          };
-          
-          this.client = new MongoClient(uri, fallbackOptions);
-          await this.client.connect();
-          this.db = this.client.db(dbName);
-          await this.db.admin().ping();
-          console.log('🍃 MongoDB conectado com fallback!');
-          await this.createIndexes();
-          return;
-        } catch (fallbackError) {
-          console.error('❌ Erro no fallback:', fallbackError.message);
-        }
-      }
-      
       throw new Error(`Falha na conexão: ${error.message}`);
     }
   }
