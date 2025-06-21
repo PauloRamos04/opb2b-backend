@@ -1,35 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import { ObjectId, Collection } from 'mongodb';
-import { MongoDBConnection } from '../lib/mongodb';
+import { MongoDBConnection } from '../lib/mongodb-fallback';
 import { IUser, IUserSession, IUserActivity, CreateUserDto } from '../models/user.model';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UserRepository {
-  private getUsersCollection(): Collection<IUser> {
+  private getUsersCollection(): any {
     try {
       const db = MongoDBConnection.getDatabase();
-      return db.collection<IUser>('users');
+      return db.collection('users');
     } catch (error) {
       console.error('❌ Erro ao obter collection users:', error.message);
       throw new Error('Database não conectado ao tentar acessar users collection');
     }
   }
 
-  private getSessionsCollection(): Collection<IUserSession> {
+  private getSessionsCollection(): any {
     try {
       const db = MongoDBConnection.getDatabase();
-      return db.collection<IUserSession>('user_sessions');
+      return db.collection('user_sessions');
     } catch (error) {
       console.error('❌ Erro ao obter collection sessions:', error.message);
       throw new Error('Database não conectado ao tentar acessar sessions collection');
     }
   }
 
-  private getActivitiesCollection(): Collection<IUserActivity> {
+  private getActivitiesCollection(): any {
     try {
       const db = MongoDBConnection.getDatabase();
-      return db.collection<IUserActivity>('user_activities');
+      return db.collection('user_activities');
     } catch (error) {
       console.error('❌ Erro ao obter collection activities:', error.message);
       throw new Error('Database não conectado ao tentar acessar activities collection');
@@ -52,7 +52,7 @@ export class UserRepository {
         ativo: true,
       };
 
-      console.log(`💾 Inserindo usuário ${userData.nome} no MongoDB...`);
+      console.log(`💾 Inserindo usuário ${userData.nome}...`);
       const result = await collection.insertOne(user);
       console.log(`✅ Usuário ${userData.nome} inserido com ID: ${result.insertedId}`);
       
@@ -66,7 +66,13 @@ export class UserRepository {
   async findByEmail(email: string): Promise<IUser | null> {
     try {
       const collection = this.getUsersCollection();
-      return await collection.findOne({ email, ativo: true });
+      const user = await collection.findOne({ email, ativo: true });
+      
+      if (MongoDBConnection.isUsingInMemory()) {
+        console.log(`🔍 Busca no banco em memória - Email: ${email}, Encontrado: ${!!user}`);
+      }
+      
+      return user;
     } catch (error) {
       console.error('❌ Erro ao buscar usuário por email:', error.message);
       throw error;
@@ -158,7 +164,6 @@ export class UserRepository {
       await collection.insertOne(activity);
     } catch (error) {
       console.error('❌ Erro ao registrar atividade:', error.message);
-      throw error;
     }
   }
 
@@ -166,43 +171,12 @@ export class UserRepository {
     try {
       const collection = this.getSessionsCollection();
       return await collection.findOne({ 
-        refreshToken,
+        refreshToken, 
         ativo: true,
-        expiresAt: { $gt: new Date() }
+        refreshExpiresAt: { $gt: new Date() }
       });
     } catch (error) {
       console.error('❌ Erro ao buscar sessão por refresh token:', error.message);
-      throw error;
-    }
-  }
-
-  async updateSessionToken(sessionId: ObjectId, newToken: string, newExpiresAt: Date): Promise<void> {
-    try {
-      const collection = this.getSessionsCollection();
-      await collection.updateOne(
-        { _id: sessionId },
-        { 
-          $set: { 
-            token: newToken,
-            expiresAt: newExpiresAt
-          }
-        }
-      );
-    } catch (error) {
-      console.error('❌ Erro ao atualizar token da sessão:', error.message);
-      throw error;
-    }
-  }
-
-  async invalidateAllUserSessions(userId: ObjectId): Promise<void> {
-    try {
-      const collection = this.getSessionsCollection();
-      await collection.updateMany(
-        { userId },
-        { $set: { ativo: false } }
-      );
-    } catch (error) {
-      console.error('❌ Erro ao invalidar todas as sessões do usuário:', error.message);
       throw error;
     }
   }

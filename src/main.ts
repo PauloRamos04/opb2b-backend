@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { MongoDBConnection } from './lib/mongodb';
+import { MongoDBConnection } from './lib/mongodb-fallback';
 
 async function bootstrap() {
   console.log('🚀 Iniciando aplicação...');
