@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ObjectId, Collection } from 'mongodb';
-import { MongoDBConnection } from '../lib/mongodb';
+import { MongoDBConnection } from '../database/mongodb';
 import { IChamado, IAndamento, IChamadoHistorico } from '../models/chamado.model';
 
 @Injectable()
