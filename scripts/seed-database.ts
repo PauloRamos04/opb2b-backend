@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { MongoClient } from 'mongodb';
-import * as bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 async function seedDatabase() {
   console.log('🌱 Iniciando seed do banco de dados...');
