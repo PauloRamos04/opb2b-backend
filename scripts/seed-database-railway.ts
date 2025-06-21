@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { MongoClient } from 'mongodb';
 import * as bcrypt from 'bcryptjs';
 
@@ -7,38 +6,39 @@ async function seedDatabase() {
   console.log('👥 Criando APENAS usuários (chamados vêm do Google Sheets)');
   console.log('🌍 TODOS os usuários terão acesso a TODAS as carteiras');
 
-  // Verificar variáveis de ambiente disponíveis
-  console.log('🔍 Variáveis de ambiente MongoDB disponíveis:');
-  Object.keys(process.env).forEach(key => {
-    if (key.toLowerCase().includes('mongo') || key.toLowerCase().includes('database')) {
-      console.log(`   ${key}: ${process.env[key]?.substring(0, 30)}...`);
-    }
-  });
+  // FORÇAR o uso da MONGO_URL do Railway
+  const uri = process.env.MONGO_URL;
+  const dbName = process.env.MONGODB_DB || 'operacoes_b2b';
 
-  // Tentar diferentes variáveis de ambiente
-  let uri = process.env.MONGODB_URL || 
-            process.env.DATABASE_URL || 
-            process.env.MONGODB_URI ||
-            process.env.MONGO_URL;
-
-  const dbName = process.env.MONGODB_DB || 
-                 process.env.DATABASE_NAME || 
-                 'operacoes_b2b';
-
-  console.log(`🔗 URI selecionada: ${uri?.substring(0, 50)}...`);
-  console.log(`📁 Database: ${dbName}`);
+  console.log('🔍 Debug das variáveis:');
+  console.log(`   MONGO_URL: ${uri}`);
+  console.log(`   MONGODB_DB: ${dbName}`);
+  console.log(`   NODE_ENV: ${process.env.NODE_ENV}`);
 
   if (!uri) {
-    console.error('❌ Nenhuma URL do MongoDB encontrada nas variáveis de ambiente');
-    console.error('Variáveis procuradas: MONGODB_URL, DATABASE_URL, MONGODB_URI, MONGO_URL');
+    console.error('❌ MONGO_URL não encontrada');
     process.exit(1);
   }
 
-  const client = new MongoClient(uri);
+  // Verificar se a URL contém railway.internal (problema)
+  if (uri.includes('railway.internal')) {
+    console.error('❌ URL contém railway.internal - isso não vai funcionar no railway run');
+    console.error('A URL deveria ser pública, não interna');
+    process.exit(1);
+  }
+
+  console.log('✅ URL parece estar correta (não contém railway.internal)');
+
+  // Criar cliente com configurações específicas
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+  });
 
   try {
-    // Conectar ao MongoDB
     console.log('🔗 Conectando ao MongoDB...');
+    console.log(`🎯 Tentando conectar em: ${uri.split('@')[1]?.split('/')[0] || 'URL_MASCARADA'}`);
+    
     await client.connect();
     console.log('✅ MongoDB conectado para seed');
 
@@ -48,6 +48,10 @@ async function seedDatabase() {
     // Testar conexão
     await db.admin().ping();
     console.log('✅ Teste de ping no MongoDB OK');
+
+    // Verificar se já existem usuários
+    const userCount = await usersCollection.countDocuments();
+    console.log(`📊 Usuários existentes no banco: ${userCount}`);
 
     // Lista completa de todas as carteiras
     const todasCarteiras = [
@@ -129,12 +133,11 @@ async function seedDatabase() {
 
         // Verificar se já existe
         const existingUser = await usersCollection.findOne({ 
-          email: userData.email, 
-          ativo: true 
+          email: userData.email 
         });
         
         if (existingUser) {
-          console.log(`⚠️  ${userData.nome} já existe`);
+          console.log(`⚠️  ${userData.nome} já existe (ID: ${existingUser._id})`);
           existentes++;
           continue;
         }
@@ -165,24 +168,32 @@ async function seedDatabase() {
     console.log(`   ✅ Criados: ${criados}`);
     console.log(`   ⚠️  Já existiam: ${existentes}`);
     console.log(`   ❌ Erros: ${erros}`);
+    console.log(`   📈 Total no banco agora: ${userCount + criados}`);
 
     if (criados > 0) {
       console.log('\n👑 Usuários criados para login:');
-      console.log('   🔑 Admin: dione@b2b.com / 123456');
-      console.log('   🔑 Admin: gustavo@b2b.com / 123456');
-      console.log('   🔑 Admin: jessica@b2b.com / 123456');
-      console.log('   🔑 Admin: leonardo@b2b.com / 123456');
-      console.log('   🔑 Admin: matheus@b2b.com / 123456');
-      console.log('   🔑 Admin: paulo@b2b.com / 123456');
-      console.log('   🔑 Admin: nickolas@b2b.com / 123456');
+      users.forEach(user => {
+        console.log(`   🔑 ${user.role}: ${user.email} / ${user.password}`);
+      });
     }
 
   } catch (error) {
-    console.error('❌ Erro no seed:', error);
-    console.error('Stack completo:', error.stack);
+    console.error('❌ Erro no seed:', error.message);
+    
+    // Debug adicional
+    if (error.message.includes('railway.internal')) {
+      console.error('🚨 PROBLEMA: O MongoDB está tentando usar railway.internal');
+      console.error('Isso significa que há uma configuração incorreta em algum lugar');
+      console.error('Verifique se não há MONGODB_URL ou DATABASE_URL conflitantes');
+    }
+    
   } finally {
-    await client.close();
-    console.log('🔌 MongoDB desconectado');
+    try {
+      await client.close();
+      console.log('🔌 MongoDB desconectado');
+    } catch (e) {
+      console.log('⚠️  Erro ao desconectar MongoDB');
+    }
     process.exit(0);
   }
 }
