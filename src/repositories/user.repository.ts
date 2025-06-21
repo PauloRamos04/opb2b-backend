@@ -68,10 +68,6 @@ export class UserRepository {
       const collection = this.getUsersCollection();
       const user = await collection.findOne({ email, ativo: true });
       
-      if (MongoDBConnection.isUsingInMemory()) {
-        console.log(`🔍 Busca no banco em memória - Email: ${email}, Encontrado: ${!!user}`);
-      }
-      
       return user;
     } catch (error) {
       console.error('❌ Erro ao buscar usuário por email:', error.message);
