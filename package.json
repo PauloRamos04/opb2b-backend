@@ -11,6 +11,7 @@
   },
   "scripts": {
     "prebuild": "rimraf dist",
+    "seed:railway": "tsx scripts/seed-database-railway.ts",
     "build": "nest build --webpack=false",
     "build:webpack": "nest build",
     "build:memory": "set NODE_OPTIONS=--max-old-space-size=8192 && nest build --webpack=false",
